@@ -59,10 +59,23 @@ function api(path, method, body) {
 
 /* ---------- 视图切换 ---------- */
 
+/* 记住当前视图（登录/后台），刷新时立即渲染，免去「加载中」占位闪烁。
+   仅作界面提示用，真正的鉴权仍以 /api/me 为准。 */
+function saveViewHint(view, name) {
+  try {
+    if (view === 'app') localStorage.setItem('mevps-view-hint', JSON.stringify({ v: 'app', u: name || 'admin' }));
+    else localStorage.setItem('mevps-view-hint', JSON.stringify({ v: 'login' }));
+  } catch (e) {}
+}
+function readViewHint() {
+  try { return JSON.parse(localStorage.getItem('mevps-view-hint') || 'null'); } catch (e) { return null; }
+}
+
 function showLogin() {
   $('view-loading').style.display = 'none';
   $('view-login').style.display = 'flex';
   $('view-app').style.display = 'none';
+  saveViewHint('login');
 }
 
 function hashPage() {
@@ -75,6 +88,7 @@ function showApp() {
   $('view-login').style.display = 'none';
   $('view-app').style.display = 'flex';
   var name = state.user || 'admin';
+  saveViewHint('app', name);
   $('user-name').textContent = name;
   $('user-avatar').textContent = name.charAt(0).toUpperCase();
   var h = new Date().getHours();
@@ -507,9 +521,31 @@ if (resetToken) {
   $('reset-mask').style.display = 'flex';
 }
 
-api('/api/me').then(function (d) {
-  state.user = d.username;
+var hint = readViewHint();
+if (hint && hint.v === 'app') {
+  /* 上次在后台：立即渲染后台，鉴权在后台静默校验（失效才回登录页） */
+  state.user = hint.u || 'admin';
   showApp();
-}).catch(function () {
+  api('/api/me').then(function (d) {
+    state.user = d.username;
+    showApp();
+  }).catch(function () {
+    state.user = null;
+    showLogin();
+  });
+} else if (hint && hint.v === 'login') {
+  /* 上次在登录页：立即渲染登录页，已登录则静默跳后台 */
   showLogin();
-});
+  api('/api/me').then(function (d) {
+    state.user = d.username;
+    showApp();
+  }).catch(function () {});
+} else {
+  /* 首次访问：无历史提示，鉴权后直接进对应视图 */
+  api('/api/me').then(function (d) {
+    state.user = d.username;
+    showApp();
+  }).catch(function () {
+    showLogin();
+  });
+}
