@@ -37,11 +37,20 @@
 
 ### 3. 绑定 D1（变量名固定为 db）
 
+**方式一：控制台手动粘贴部署时**
+
 1. 回到 Worker 的 **Settings** → **Bindings** → **Add binding**
 2. 选择 **D1 database**：
    - **Variable name（变量名）** 固定填：**`db`**
    - **D1 database** 选择：**`mevps`**
 3. 保存并再次 **Deploy**
+
+**方式二：GitHub 连接自动部署（Workers Builds）**
+
+1. **Workers & Pages** → **Create** → **Import a repository**，选择本仓库
+2. Build command 填：`npx wrangler deploy`（其余留空）
+3. Deploy 即可 —— `wrangler.toml` 里只声明了 `binding = "db"` 和 `database_name = "mevps"`，
+   **不填 database_id，部署时会自动创建（或复用已存在的）`mevps` 数据库并完成绑定**，无需任何手动配置
 
 ### 4. 访问
 
@@ -68,9 +77,7 @@ mevps/
 ```bash
 npm i -g wrangler
 wrangler login
-wrangler d1 create mevps         # 如控制台已创建可跳过
-# 把返回的 database_id 填入 wrangler.toml
-wrangler deploy
+wrangler deploy               # 首次部署自动创建 mevps 数据库并绑定
 ```
 
 ## 安全提示

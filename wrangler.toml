@@ -3,8 +3,7 @@ main = "src/worker.js"
 compatibility_date = "2026-11-01"
 
 # D1 绑定变量名固定为 db，数据库名为 mevps
-# 使用 Wrangler CLI 部署时，把创建 D1 后得到的 database_id 填到下面
+# 不写 database_id：wrangler >= 4.45 部署时自动创建/复用同名 D1 数据库（无需手动填 ID）
 [[d1_databases]]
 binding = "db"
 database_name = "mevps"
-database_id = "<your-d1-database-id>"
