@@ -254,9 +254,42 @@ tr:hover td { background: #fafbfc; }
 .toast.show { opacity: 1; transform: translateY(0); }
 .toast.err { background: #d03050; }
 
+/* ===== 移动端：汉堡按钮 + 抽屉侧边栏 ===== */
+.burger {
+  display: none; width: 38px; height: 38px; border: 1px solid var(--border); border-radius: 8px;
+  background: #fff; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+  color: var(--text-1); padding: 0;
+}
+.burger svg { width: 20px; height: 20px; }
+.sidebar-mask {
+  display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, .35);
+  z-index: 120; opacity: 0; pointer-events: none; transition: opacity .25s;
+}
+.sidebar-mask.show { opacity: 1; pointer-events: auto; }
+
 @media (max-width: 960px) {
   .cards { grid-template-columns: repeat(2, 1fr); }
   .row2 { grid-template-columns: 1fr; }
   .settings-grid { grid-template-columns: 1fr; }
   .login-card { width: 92vw; }
+
+  /* 侧边栏 → 抽屉 */
+  .sidebar {
+    position: fixed; left: -272px; top: 0; bottom: 0; z-index: 130;
+    transition: left .25s ease; box-shadow: none;
+  }
+  .sidebar.open { left: 0; box-shadow: 8px 0 24px rgba(0, 0, 0, .18); }
+  .sidebar-mask { display: block; }
+  .burger { display: inline-flex; }
+
+  /* 表格横向滚动 */
+  table { display: block; overflow-x: auto; white-space: nowrap; }
+
+  /* 紧凑排版 */
+  .content { padding: 12px; }
+  .header { padding: 0 12px; }
+  .header .title { font-size: 15px; }
+  .modal { width: auto; padding: 18px; }
+  .modal-sm { width: auto; }
+  .stat-card .n { font-size: 22px; }
 }

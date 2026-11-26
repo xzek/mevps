@@ -78,8 +78,22 @@ function showApp() {
 
 var PAGE_TITLES = { dashboard: '数据仪表盘', vps: 'VPS 管理', logs: '操作日志', settings: '系统设置' };
 
+/* ---------- 移动端侧边栏抽屉 ---------- */
+function toggleSidebar() {
+  var sb = document.querySelector('.sidebar');
+  var mask = $('sidebar-mask');
+  var open = !sb.classList.contains('open');
+  sb.classList.toggle('open', open);
+  mask.classList.toggle('show', open);
+}
+function closeSidebar() {
+  document.querySelector('.sidebar').classList.remove('open');
+  $('sidebar-mask').classList.remove('show');
+}
+
 function switchPage(page) {
   state.page = page;
+  if (window.innerWidth <= 960) closeSidebar();
   var items = document.querySelectorAll('.menu-item');
   for (var i = 0; i < items.length; i++) {
     items[i].className = 'menu-item' + (items[i].getAttribute('data-page') === page ? ' active' : '');

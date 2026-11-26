@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>mevps · VPS 管理系统</title>
-<link rel="stylesheet" href="/assets/admin.ae52c231.css">
+<link rel="stylesheet" href="/assets/admin.aaf79baa.css">
 </head>
 <body>
 
@@ -71,9 +71,13 @@
     </nav>
     <div class="sidebar-foot">mevps · Powered by CF Workers + D1</div>
   </aside>
+  <div class="sidebar-mask" id="sidebar-mask" onclick="toggleSidebar()"></div>
 
   <div class="main">
     <div class="header">
+      <button class="burger" id="burger" onclick="toggleSidebar()" aria-label="菜单">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
       <div class="title" id="page-title">数据仪表盘</div>
       <div class="user-chip">
         <div class="avatar" id="user-avatar">A</div>
@@ -295,6 +299,6 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="/assets/admin.f45f1361.js"></script>
+<script src="/assets/admin.b5dbf376.js"></script>
 </body>
 </html>
