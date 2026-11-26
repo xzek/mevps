@@ -71,6 +71,24 @@ function readViewHint() {
   try { return JSON.parse(localStorage.getItem('mevps-view-hint') || 'null'); } catch (e) { return null; }
 }
 
+/* 站点名称本地缓存：刷新/打开时立即应用，免去先闪默认名再替换 */
+function saveSiteName(name) {
+  try { if (name) localStorage.setItem('mevps-site-name', name); } catch (e) {}
+}
+function readSiteName() {
+  try { return localStorage.getItem('mevps-site-name') || ''; } catch (e) { return ''; }
+}
+function applySiteName(name) {
+  if (!name) return;
+  $('brand-name').textContent = name;
+  document.title = name + ' · VPS 管理系统';
+}
+function refreshSiteName() {
+  api('/api/settings').then(function (s) {
+    if (s && s.site_name) { applySiteName(s.site_name); saveSiteName(s.site_name); }
+  }).catch(function () {});
+}
+
 function showLogin() {
   $('view-loading').style.display = 'none';
   $('view-login').style.display = 'flex';
@@ -95,6 +113,7 @@ function showApp() {
   var greet = h < 6 ? '凌晨好' : (h < 9 ? '早安' : (h < 12 ? '上午好' : (h < 14 ? '中午好' : (h < 18 ? '下午好' : '晚上好'))));
   $('greet-text').textContent = greet + '，' + name + '，今天又是充满活力的一天';
   switchPage(hashPage());
+  refreshSiteName();
 }
 
 var PAGE_TITLES = { dashboard: '数据仪表盘', vps: 'VPS 管理', logs: '操作日志', settings: '系统设置' };
@@ -383,8 +402,8 @@ function renderSettings() {
     $('sw-captcha_enabled').classList.toggle('on', s.captcha_enabled === '1');
     $('sw-forgot_enabled').classList.toggle('on', s.forgot_enabled === '1');
     if (s.site_name) {
-      $('brand-name').textContent = s.site_name;
-      document.title = s.site_name + ' · VPS 管理系统';
+      applySiteName(s.site_name);
+      saveSiteName(s.site_name);
     }
   }).catch(function (e) {
     toast(e.message, true);
@@ -513,6 +532,7 @@ $('login-form').addEventListener('submit', function (e) {
 
 /* ---------- 启动 ---------- */
 
+applySiteName(readSiteName()); /* 先用缓存站名渲染，随后台同步 */
 loadCaptcha();
 
 var resetToken = new URLSearchParams(location.search).get('reset');
