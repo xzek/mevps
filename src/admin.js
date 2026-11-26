@@ -96,7 +96,7 @@ function switchPage(page) {
   if (window.innerWidth <= 960) closeSidebar();
   var items = document.querySelectorAll('.menu-item');
   for (var i = 0; i < items.length; i++) {
-    items[i].className = 'menu-item' + (items[i].getAttribute('data-page') === page ? ' active' : '');
+    items[i].classList.toggle('active', items[i].getAttribute('data-page') === page);
   }
   var secs = ['dashboard', 'vps', 'logs', 'settings'];
   for (var j = 0; j < secs.length; j++) {
