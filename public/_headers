@@ -1,0 +1,12 @@
+# 静态资源缓存策略（由 Cloudflare Workers Static Assets 应用）
+# 规则互不重叠，避免同名头被合并
+
+# HTML 壳：每次协商验证（默认等价于 no-cache），部署后立即生效
+/
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
+
+# 带内容哈希的资源：文件名即版本，一年内不发任何验证请求
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

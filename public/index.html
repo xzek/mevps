@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mevps · VPS 管理系统</title>
+<link rel="stylesheet" href="/assets/admin.ae52c231.css">
+</head>
+<body>
+
+<!-- ================= 登录 ================= -->
+<div class="login-wrap" id="view-login">
+  <div class="blob-1"></div>
+  <div class="blob-2"></div>
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="brand-logo">M</div>
+      <div>
+        <div class="brand-name">VPS 服务器管理系统</div>
+        <div class="brand-sub">VPS 服务器管理面板 · Cloudflare Workers + D1</div>
+      </div>
+    </div>
+    <form id="login-form">
+      <div class="form-item">
+        <input class="form-input" id="login-username" autocomplete="username" placeholder="请输入用户名">
+      </div>
+      <div class="form-item">
+        <input class="form-input" id="login-password" type="password" autocomplete="current-password" placeholder="请输入密码">
+      </div>
+      <div class="form-item captcha-row" id="captcha-row">
+        <input class="form-input" id="login-captcha" placeholder="验证码" maxlength="4" autocomplete="off">
+        <div class="captcha-box" id="captcha-box" onclick="loadCaptcha()" title="点击刷新"></div>
+      </div>
+      <div class="login-row">
+        <label class="remember"><input type="checkbox" id="login-remember" checked> 记住我</label>
+        <a class="forgot" href="javascript:void(0)" onclick="showForgot()">忘记密码？</a>
+      </div>
+      <button class="btn-pill" type="submit">确 认</button>
+    </form>
+    <p class="hint">mevps · Powered by CF Workers + D1</p>
+  </div>
+</div>
+
+<!-- ================= 主界面 ================= -->
+<div class="app" id="view-app" style="display:none">
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-badge">M</div>
+      <div>
+        <div class="logo-name" id="brand-name">mevps</div>
+        <div class="logo-sub">VPS 管理系统</div>
+      </div>
+    </div>
+    <nav class="menu">
+      <div class="menu-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+        数据仪表盘
+      </div>
+      <div class="menu-item" data-page="vps" onclick="switchPage('vps')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><circle cx="7.5" cy="7.5" r="1" fill="currentColor"/><circle cx="7.5" cy="16.5" r="1" fill="currentColor"/></svg>
+        VPS 管理
+      </div>
+      <div class="menu-item" data-page="logs" onclick="switchPage('logs')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="12" r="1" fill="currentColor"/><circle cx="4" cy="18" r="1" fill="currentColor"/></svg>
+        操作日志
+      </div>
+      <div class="menu-item" data-page="settings" onclick="switchPage('settings')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h10M18 8h2M4 16h2M10 16h10"/><circle cx="16" cy="8" r="2"/><circle cx="8" cy="16" r="2"/></svg>
+        系统设置
+      </div>
+    </nav>
+    <div class="sidebar-foot">mevps · Powered by CF Workers + D1</div>
+  </aside>
+
+  <div class="main">
+    <div class="header">
+      <div class="title" id="page-title">数据仪表盘</div>
+      <div class="user-chip">
+        <div class="avatar" id="user-avatar">A</div>
+        <span id="user-name">admin</span>
+        <button class="btn btn-ghost btn-sm" onclick="logout()">退出</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- 仪表盘 -->
+      <section id="page-dashboard">
+        <div class="card greet">
+          <div>
+            <div class="greet-title" id="greet-text">欢迎回来</div>
+            <div class="greet-sub">祝你今天工作顺利，机器稳定运行</div>
+          </div>
+          <div class="greet-meta">mevps · VPS 服务器管理面板</div>
+        </div>
+        <div class="cards">
+          <div class="stat-card g1">
+            <div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/></svg>VPS 总数</div>
+            <div class="n" id="d-total">0</div>
+            <div class="s">全部纳管资产</div>
+          </div>
+          <div class="stat-card g2">
+            <div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>运行中</div>
+            <div class="n" id="d-running">0</div>
+            <div class="s">状态正常的机器</div>
+          </div>
+          <div class="stat-card g4">
+            <div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>即将到期</div>
+            <div class="n" id="d-expiring">0</div>
+            <div class="s">按设置的提醒天数统计</div>
+          </div>
+          <div class="stat-card g3">
+            <div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M7 7h7a3 3 0 010 6H8a3 3 0 000 6h8"/></svg>月度支出</div>
+            <div class="n" id="d-monthly">¥0</div>
+            <div class="s">所有 VPS 月付合计</div>
+          </div>
+        </div>
+
+        <div class="row2">
+          <div class="card">
+            <div class="section-title">服务商分布</div>
+            <div id="d-providers"></div>
+          </div>
+          <div class="card">
+            <div class="section-title">状态分布</div>
+            <div class="donut-wrap">
+              <div class="donut" id="d-donut">
+                <div class="donut-hole"><div class="n" id="d-donut-n">0</div><div class="t">VPS 总数</div></div>
+              </div>
+              <div id="d-legend"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card card-block">
+          <div class="section-title">最近操作</div>
+          <div id="d-logs"></div>
+        </div>
+      </section>
+
+      <!-- VPS 管理 -->
+      <section id="page-vps" style="display:none">
+        <div class="toolbar">
+          <input class="form-input" id="vps-q" placeholder="搜索名称 / IP / 服务商 / 机房" style="width:260px" onkeydown="if(event.key==='Enter'){searchVps()}">
+          <select class="form-input" id="vps-status" onchange="searchVps()">
+            <option value="">全部状态</option>
+            <option value="running">运行中</option>
+            <option value="stopped">已停止</option>
+            <option value="maintenance">维护中</option>
+          </select>
+          <button class="btn btn-ghost" onclick="searchVps()">查询</button>
+          <div class="spacer"></div>
+          <button class="btn btn-primary" onclick="showVpsModal()">＋ 新增 VPS</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>名称</th><th>IP 地址</th><th>服务商 / 机房</th><th>配置</th><th>系统</th>
+              <th>状态</th><th>到期时间</th><th>价格/月</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="vps-tbody"></tbody>
+        </table>
+        <div class="pager" id="vps-pager"></div>
+      </section>
+
+      <!-- 操作日志 -->
+      <section id="page-logs" style="display:none">
+        <div class="toolbar">
+          <select class="form-input" id="log-action" onchange="searchLogs()">
+            <option value="">全部操作</option>
+            <option value="登录">登录相关</option>
+            <option value="新增">新增</option>
+            <option value="编辑">编辑</option>
+            <option value="删除">删除</option>
+            <option value="设置">修改设置</option>
+            <option value="密码">修改密码</option>
+          </select>
+          <div class="spacer"></div>
+          <button class="btn btn-ghost" onclick="searchLogs()">刷新</button>
+        </div>
+        <table>
+          <thead>
+            <tr><th>时间</th><th>操作人</th><th>操作</th><th>对象</th><th>详情</th><th>IP</th></tr>
+          </thead>
+          <tbody id="log-tbody"></tbody>
+        </table>
+        <div class="pager" id="log-pager"></div>
+      </section>
+
+      <!-- 系统设置 -->
+      <section id="page-settings" style="display:none">
+        <div class="settings-grid">
+          <div class="card">
+            <div class="section-title">系统变量</div>
+            <p class="hint-l" style="margin:-8px 0 14px">所有变量统一存储于 D1 数据库，保存后立即生效。</p>
+            <div class="form-item"><label>站点名称</label><input class="form-input" id="s-site_name"></div>
+            <div class="form-item"><label>管理员邮箱</label><input class="form-input" id="s-admin_email"></div>
+            <div class="form-item"><label>到期提醒天数</label><input class="form-input" id="s-expire_warn_days" type="number" min="1" max="90"></div>
+            <button class="btn btn-primary" onclick="saveSettings()">保存设置</button>
+          </div>
+          <div class="card">
+            <div class="section-title">安全与登录</div>
+            <div class="switch-row">
+              <div>
+                <div class="switch-label">启用登录验证码</div>
+                <div class="hint-l">登录时需要输入图片验证码</div>
+              </div>
+              <div class="switch on" id="sw-captcha_enabled" onclick="toggleSwitch('captcha_enabled')"><div class="knob"></div></div>
+            </div>
+            <div class="switch-row">
+              <div>
+                <div class="switch-label">启用邮箱找回密码</div>
+                <div class="hint-l">忘记密码时通过管理员邮箱发送重置链接</div>
+              </div>
+              <div class="switch on" id="sw-forgot_enabled" onclick="toggleSwitch('forgot_enabled')"><div class="knob"></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="section-title">Outlook (Graph API) 设置</div>
+            <p class="hint-l" style="margin:-8px 0 14px">用于「忘记密码」时通过 Outlook 发送重置邮件，需在 Azure 注册应用并授权 Mail.Send。</p>
+            <div class="form-item"><label>租户 ID (Tenant ID)</label><input class="form-input" id="s-outlook_tenant_id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"></div>
+            <div class="form-item"><label>客户端 ID (Client ID)</label><input class="form-input" id="s-outlook_client_id" placeholder="Application (client) ID"></div>
+            <div class="form-item"><label>客户端机密 (Client Secret)</label><input class="form-input" id="s-outlook_client_secret" type="password" placeholder="Client Secret Value"></div>
+            <div class="form-item"><label>发件邮箱 (Send As)</label><input class="form-input" id="s-outlook_sender" placeholder="sender@yourdomain.com"></div>
+            <button class="btn btn-primary" onclick="saveSettings()">保存设置</button>
+          </div>
+          <div class="card">
+            <div class="section-title">修改密码</div>
+            <div class="form-item"><label>当前密码</label><input class="form-input" id="p-old" type="password" autocomplete="current-password"></div>
+            <div class="form-item"><label>新密码</label><input class="form-input" id="p-new" type="password" autocomplete="new-password" placeholder="至少 6 位"></div>
+            <div class="form-item"><label>确认新密码</label><input class="form-input" id="p-new2" type="password" autocomplete="new-password"></div>
+            <button class="btn btn-primary" onclick="changePassword()">修改密码</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- VPS 弹窗 -->
+<div class="modal-mask" id="vps-mask">
+  <div class="modal">
+    <div class="modal-title" id="vps-modal-title">新增 VPS</div>
+    <div class="form-grid">
+      <div class="form-item"><label>名称 *</label><input class="form-input" id="f-name" placeholder="如：搬瓦工-香港-01"></div>
+      <div class="form-item"><label>IP 地址</label><input class="form-input" id="f-ip" placeholder="如：1.2.3.4"></div>
+      <div class="form-item"><label>服务商</label><input class="form-input" id="f-provider" placeholder="如：BandwagonHost"></div>
+      <div class="form-item"><label>机房位置</label><input class="form-input" id="f-location" placeholder="如：香港 HK"></div>
+      <div class="form-item"><label>CPU</label><input class="form-input" id="f-cpu" placeholder="如：2 核"></div>
+      <div class="form-item"><label>内存</label><input class="form-input" id="f-memory" placeholder="如：4 GB"></div>
+      <div class="form-item"><label>磁盘</label><input class="form-input" id="f-disk" placeholder="如：60 GB SSD"></div>
+      <div class="form-item"><label>操作系统</label><input class="form-input" id="f-os" placeholder="如：Ubuntu 24.04"></div>
+      <div class="form-item"><label>状态</label>
+        <select class="form-input" id="f-status">
+          <option value="running">运行中</option>
+          <option value="stopped">已停止</option>
+          <option value="maintenance">维护中</option>
+        </select>
+      </div>
+      <div class="form-item"><label>到期时间</label><input class="form-input" id="f-expire_date" type="date"></div>
+      <div class="form-item"><label>价格（元/月）</label><input class="form-input" id="f-price" type="number" min="0" step="0.01" placeholder="如：35"></div>
+      <div class="form-item"><label>备注</label><input class="form-input" id="f-note" placeholder="选填"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="hideVpsModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveVps()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 忘记密码弹窗 -->
+<div class="modal-mask" id="forgot-mask">
+  <div class="modal modal-sm">
+    <div class="modal-title">找回密码</div>
+    <p class="hint-l" style="margin:-8px 0 16px">输入管理员邮箱，我们会发送一封密码重置邮件（30 分钟内有效）。</p>
+    <div class="form-item"><input class="form-input" id="forgot-email" type="email" placeholder="请输入邮箱"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="hideForgot()">取消</button>
+      <button class="btn btn-primary" onclick="submitForgot()">发送邮件</button>
+    </div>
+  </div>
+</div>
+
+<!-- 重置密码弹窗 -->
+<div class="modal-mask" id="reset-mask">
+  <div class="modal modal-sm">
+    <div class="modal-title">重置密码</div>
+    <div class="form-item"><label>新密码</label><input class="form-input" id="reset-new" type="password" placeholder="至少 6 位"></div>
+    <div class="form-item"><label>确认新密码</label><input class="form-input" id="reset-new2" type="password"></div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" onclick="submitReset()">重置密码</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/assets/admin.f45f1361.js"></script>
+</body>
+</html>

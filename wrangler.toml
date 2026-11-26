@@ -2,6 +2,17 @@ name = "mevps"
 main = "src/worker.js"
 compatibility_date = "2026-11-01"
 
+# 管理界面静态资源（构建产物 public/，node build.mjs 生成）：
+# 命中静态资源的请求由 Cloudflare 边缘直接提供（免费、不消耗 Worker 请求额度）；
+# 未命中的请求（/api/*）自动回落到 Worker 处理
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+# 部署前自动执行构建（esbuild 压缩 + 内容哈希文件名）
+[build]
+command = "npm install --no-audit --no-fund && npm run build"
+
 # D1 绑定变量名固定为 db，数据库名为 mevps
 # 不写 database_id：wrangler >= 4.45 部署时自动创建/复用同名 D1 数据库（无需手动填 ID）
 [[d1_databases]]

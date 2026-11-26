@@ -1,7 +1,6 @@
 # mevps · VPS 服务器管理面板
 
-基于 **Cloudflare Workers + D1** 的轻量 VPS 服务器管理项目，前后端全部在一个 Worker 文件里，
-可以通过 **Cloudflare 控制台（纯浏览器操作）** 完成部署，无需命令行、无需构建。
+基于 **Cloudflare Workers + D1 + Static Assets** 的轻量 VPS 服务器管理项目：`src/worker.js` 只写接口，管理界面由 Cloudflare 静态资源在边缘直接提供（更快、不消耗 Worker 请求额度）。
 
 后台面板样式参考 [soybean-admin](https://github.com/soybeanjs/soybean-admin)：清爽绿色主题、侧边栏菜单 + 卡片式内容区。
 
@@ -27,38 +26,27 @@
 
 > ⚠️ 首次登录后请立即在「系统设置」中修改默认密码。
 
-## 浏览器部署步骤（Cloudflare 控制台）
+## 部署（Cloudflare 控制台，浏览器操作）
 
-### 1. 创建 D1 数据库
+### 方式 A：连接 Git 仓库部署（推荐，全自动 ✅）
 
-1. 打开 [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages** → **D1**（或「存储和数据库 → D1」）
-2. 点击 **Create database**，数据库名称固定填写：**`mevps`**
-3. 创建完成即可，无需手动建表（首次访问自动建表并写入默认数据）
+1. Cloudflare 控制台 → Workers 和 Pages → 创建 → **导入存储库 (Import a repository)**，选择 `xzek/mevps`。
+2. 保持默认设置直接部署。
 
-### 2. 创建 Worker 并粘贴代码
+就这么简单：`wrangler.toml` 中已声明 D1 绑定（变量名 `db`，数据库名 `mevps`），部署时 Cloudflare 会**自动创建 D1 数据库并完成绑定**（官方 Automatic provisioning 功能）；构建命令会自动执行生成静态资源（`public/`），数据表和初始配置（admin/123456 等）由 Worker 在首次请求时**自动创建写入**。
 
-1. **Workers & Pages** → **Create** → **Create Worker**，名字填 `mevps`
-2. 点击 **Edit code**（编辑代码），把仓库中 `src/worker.js` 的**全部内容**粘贴进去（替换默认代码）
-3. 点击 **Deploy** 保存
+### 方式 B：命令行部署（wrangler）
 
-### 3. 绑定 D1（变量名固定为 db）
+```bash
+npm install                   # 安装构建依赖（esbuild）
+npm run build                 # 生成静态资源 public/（wrangler deploy 时也会自动执行）
+npx wrangler d1 create mevps  # 自动建库部署可跳过此步；手动建库则把 database_id 填入 wrangler.toml
+npx wrangler deploy
+```
 
-**方式一：控制台手动粘贴部署时**
+> ⚠️ 管理界面已改为 **Static Assets** 静态资源（需构建产物 `public/`），不再支持「控制台编辑器粘贴代码」部署，请使用以上两种方式之一。
 
-1. 回到 Worker 的 **Settings** → **Bindings** → **Add binding**
-2. 选择 **D1 database**：
-   - **Variable name（变量名）** 固定填：**`db`**
-   - **D1 database** 选择：**`mevps`**
-3. 保存并再次 **Deploy**
-
-**方式二：GitHub 连接自动部署（Workers Builds）**
-
-1. **Workers & Pages** → **Create** → **Import a repository**，选择本仓库
-2. Build command 填：`npx wrangler deploy`（其余留空）
-3. Deploy 即可 —— `wrangler.toml` 里只声明了 `binding = "db"` 和 `database_name = "mevps"`，
-   **不填 database_id，部署时会自动创建（或复用已存在的）`mevps` 数据库并完成绑定**，无需任何手动配置
-
-### 4. 访问
+### 访问
 
 打开 Worker 的 `*.workers.dev` 域名，首次访问会自动创建数据表并初始化，直接用 `admin / 123456` 登录。
 
@@ -67,8 +55,15 @@
 ```
 mevps/
 ├── src/
-│   └── worker.js     # 全部代码（API + 前端页面），粘贴进 CF Worker 即可运行
-├── wrangler.toml     # 可选：使用 Wrangler CLI 部署时的配置
+│   ├── worker.js     # 接口层：/api/* 全部逻辑
+│   ├── index.html    # 管理界面 HTML 壳（模板，构建时注入哈希资源引用）
+│   ├── admin.css     # 管理界面样式源码
+│   ├── admin.js      # 管理界面脚本源码
+│   └── _headers      # 静态资源缓存策略
+├── build.mjs         # 构建脚本：esbuild 压缩 + 内容哈希文件名 → 输出 public/
+├── public/           # 构建产物（静态资源，边缘直接提供，已提交入库）
+├── package.json      # 构建依赖（esbuild）
+├── wrangler.toml     # 部署配置（Static Assets + D1 绑定）
 └── README.md
 ```
 
@@ -77,14 +72,6 @@ mevps/
 - **所有系统变量都存在 D1 里**（`settings` 表，key-value 形式），修改后立即生效
 - 数据表首次访问自动创建：`users`（账号）、`sessions`（会话）、`vps`（机器资产）、`logs`（操作日志）、`settings`（系统变量）
 - 默认系统变量：`site_name=mevps`、`admin_email=mevps`、`expire_warn_days=7`
-
-## 可选：Wrangler CLI 部署
-
-```bash
-npm i -g wrangler
-wrangler login
-wrangler deploy               # 首次部署自动创建 mevps 数据库并绑定
-```
 
 ## 安全提示
 
