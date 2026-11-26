@@ -434,51 +434,67 @@ const HTML = `<!DOCTYPE html>
 <title>mevps · VPS 管理系统</title>
 <style>
 :root {
-  --primary: #18a058;
-  --primary-hover: #36ad60;
-  --primary-light: #e8f7f0;
-  --bg: #f5f7f9;
+  --primary: #646cff;
+  --primary-hover: #5259e8;
+  --primary-weak: #eef0ff;
+  --bg: #f0f2f5;
   --border: #e5e6eb;
-  --text: #262626;
-  --text-2: #595959;
-  --text-3: #8c8c8c;
+  --text-1: #1d2129;
+  --text-2: #4e5969;
+  --text-3: #86909c;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; height: 100%; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
-  background: var(--bg); color: var(--text); font-size: 14px;
+  background: var(--bg); color: var(--text-1); font-size: 14px;
 }
 button { font-family: inherit; }
 a { color: var(--primary); text-decoration: none; }
 
 /* ===== 登录页 ===== */
-.login-wrap { display: flex; height: 100vh; }
-.login-brand {
-  flex: 1; background: linear-gradient(135deg, #18a058 0%, #0c7a44 60%, #095c33 100%);
-  color: #fff; padding: 64px; display: flex; flex-direction: column; justify-content: center;
+.login-wrap {
+  position: relative; display: flex; height: 100vh; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 50%, #a5b4fc 100%); overflow: hidden;
 }
-.login-brand h1 { font-size: 42px; margin: 0 0 12px; letter-spacing: 1px; }
-.login-brand p { font-size: 16px; opacity: .92; margin: 6px 0; }
-.login-brand .feature { margin-top: 34px; }
-.login-brand .feature div {
-  display: flex; align-items: center; gap: 10px; margin: 12px 0; font-size: 15px; opacity: .95;
+.blob-1 {
+  position: absolute; top: -220px; left: -160px; width: 680px; height: 680px; border-radius: 50%;
+  background: linear-gradient(135deg, #818cf8, #646cff); opacity: .45;
 }
-.login-brand .feature .tick {
-  width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,.22);
-  display: inline-flex; align-items: center; justify-content: center; font-size: 13px;
+.blob-2 {
+  position: absolute; bottom: -260px; right: -140px; width: 720px; height: 560px;
+  border-radius: 50% 50% 0 0; background: linear-gradient(180deg, #646cff, #818cf8); opacity: .55;
 }
-.login-box { width: 460px; background: #fff; display: flex; align-items: center; justify-content: center; }
-.login-card { width: 320px; }
-.login-card h2 { margin: 0 0 6px; font-size: 24px; }
-.login-card .sub { color: var(--text-3); margin: 0 0 28px; font-size: 13px; }
+.login-card {
+  position: relative; width: 448px; background: #fff; border-radius: 12px;
+  padding: 36px 40px 28px; box-shadow: 0 12px 48px rgba(60, 70, 180, .22);
+}
+.login-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
+.brand-logo {
+  width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #8b93ff, #646cff);
+  color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px;
+}
+.brand-name { font-size: 18px; font-weight: 600; color: var(--text-1); }
+.brand-sub { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+.login-tab { text-align: center; font-size: 15px; font-weight: 600; color: var(--primary); margin-bottom: 22px; }
+.login-extra { display: flex; gap: 10px; margin-top: 16px; justify-content: center; }
 
 /* ===== 表单 ===== */
 .form-input {
-  width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px;
-  font-size: 14px; outline: none; background: #fff; transition: border .15s;
+  width: 100%; height: 42px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px;
+  font-size: 14px; outline: none; background: #fff; transition: all .15s;
 }
-.form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(24,160,88,.12); }
+.form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(100, 108, 255, .12); }
+.form-input::placeholder { color: #94a3b8; }
+.login-row { display: flex; align-items: center; justify-content: space-between; margin: -4px 0 18px; }
+.remember { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); cursor: pointer; }
+.remember input { accent-color: var(--primary); }
+.forgot { font-size: 12px; color: var(--primary); cursor: pointer; }
+.forgot:hover { text-decoration: underline; }
+.greet { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.greet-title { font-size: 18px; font-weight: 600; }
+.greet-sub { font-size: 13px; color: var(--text-3); margin-top: 6px; }
+.greet-meta { font-size: 12px; color: var(--text-3); }
 .form-item { margin-bottom: 16px; }
 .form-item label { display: block; font-size: 13px; color: var(--text-2); margin-bottom: 6px; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
@@ -490,38 +506,49 @@ a { color: var(--primary); text-decoration: none; }
 }
 .btn-primary { background: var(--primary); color: #fff; }
 .btn-primary:hover { background: var(--primary-hover); }
+.btn-pill {
+  width: 100%; height: 44px; border-radius: 40px;
+  background: linear-gradient(135deg, #646cff 0%, #818cf8 100%); color: #fff;
+  font-size: 15px; font-weight: 500; border: none; cursor: pointer; transition: all .15s;
+}
+.btn-pill:hover { background: linear-gradient(135deg, #5259e8 0%, #646cff 100%); }
+.chip {
+  height: 34px; padding: 0 16px; border: none; border-radius: 6px;
+  background: var(--primary); color: #fff; font-size: 12px; cursor: pointer;
+}
+.chip:hover { background: var(--primary-hover); }
+.chip-ghost { background: var(--primary-weak); color: var(--primary); }
 .btn-ghost { background: #fff; border-color: var(--border); color: var(--text-2); }
 .btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
 .btn-danger { background: #fff; border-color: #ffccc7; color: #d03050; }
 .btn-danger:hover { background: #fff1f0; }
-.btn-block { width: 100%; padding: 11px; }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
 .btn-sm { padding: 4px 12px; font-size: 12px; }
 
 /* ===== 布局 ===== */
 .app { display: flex; height: 100vh; overflow: hidden; }
 .sidebar {
-  width: 220px; background: #fff; border-right: 1px solid var(--border);
+  width: 240px; background: #fff; border-right: 1px solid var(--border);
   display: flex; flex-direction: column; flex-shrink: 0;
 }
 .logo {
-  height: 56px; display: flex; align-items: center; gap: 10px; padding: 0 16px;
+  height: 64px; display: flex; align-items: center; gap: 12px; padding: 0 16px;
   border-bottom: 1px solid var(--border);
 }
 .logo-badge {
-  width: 32px; height: 32px; border-radius: 8px; background: var(--primary); color: #fff;
-  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px;
+  width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, #8b93ff, #646cff);
+  color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px;
 }
-.logo-name { font-size: 17px; font-weight: 700; letter-spacing: .5px; }
+.logo-name { font-size: 16px; font-weight: 600; letter-spacing: .5px; }
 .logo-sub { font-size: 10px; color: var(--text-3); margin-top: 1px; }
-.menu { padding: 12px 8px; flex: 1; }
+.menu { padding: 8px 0; flex: 1; }
 .menu-item {
-  display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 6px;
-  cursor: pointer; color: var(--text-2); margin-bottom: 4px; font-size: 14px; user-select: none;
+  display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 16px; margin: 2px 8px;
+  border-radius: 4px; cursor: pointer; color: var(--text-2); font-size: 14px; user-select: none;
 }
-.menu-item:hover { background: #f2f3f5; }
-.menu-item.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
-.menu-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+.menu-item:hover { background: #f5f5f5; color: var(--text-1); }
+.menu-item.active { background: #e8eaff; color: var(--primary); font-weight: 500; }
+.menu-item svg { width: 16px; height: 16px; flex-shrink: 0; }
 .sidebar-foot { padding: 14px 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-3); }
 
 .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
@@ -530,31 +557,34 @@ a { color: var(--primary); text-decoration: none; }
   display: flex; align-items: center; justify-content: space-between; padding: 0 20px; flex-shrink: 0;
 }
 .header .title { font-size: 16px; font-weight: 600; }
-.user-chip {
-  display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-2);
-}
+.user-chip { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-2); }
 .avatar {
-  width: 32px; height: 32px; border-radius: 50%; background: var(--primary-light); color: var(--primary);
-  display: flex; align-items: center; justify-content: center; font-weight: 600;
+  width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #8b93ff, #646cff);
+  color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px;
 }
-.content { flex: 1; overflow: auto; padding: 20px; }
+.content { flex: 1; overflow: auto; padding: 24px; }
 
 /* ===== 卡片 ===== */
-.card { background: #fff; border-radius: 8px; padding: 18px 20px; box-shadow: 0 1px 2px rgba(0,0,0,.03); }
+.card { background: #fff; border-radius: 8px; padding: 24px; box-shadow: 0 1px 2px rgba(0, 0, 0, .05); }
 .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-.stat-title { color: var(--text-3); font-size: 13px; display: flex; align-items: center; gap: 8px; }
-.stat-value { font-size: 28px; font-weight: 700; margin-top: 8px; }
-.stat-sub { font-size: 12px; color: var(--text-3); margin-top: 6px; }
+.stat-card { border-radius: 12px; padding: 20px 24px; color: #fff; overflow: hidden; }
+.stat-card .t { font-size: 14px; font-weight: 500; opacity: .95; display: flex; align-items: center; gap: 8px; }
+.stat-card .t svg { width: 16px; height: 16px; }
+.stat-card .n { font-size: 32px; font-weight: 600; text-align: right; margin-top: 14px; }
+.stat-card .s { font-size: 12px; opacity: .85; margin-top: 8px; }
+.g1 { background: linear-gradient(90deg, #ec5e8f, #8b5cf6); }
+.g2 { background: linear-gradient(90deg, #8b5cf6, #646cff); }
+.g3 { background: linear-gradient(90deg, #38bdf8, #22d3ee); }
+.g4 { background: linear-gradient(90deg, #f59e0b, #fb923c); }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
-.section-title { font-size: 15px; font-weight: 600; margin: 0 0 14px; }
-.card + .card-block { margin-top: 16px; }
+.section-title { font-size: 15px; font-weight: 600; margin: 0 0 16px; color: var(--text-1); }
 .card-block { margin-top: 16px; }
 
 /* ===== 图表 ===== */
-.bar-row { display: flex; align-items: center; gap: 10px; margin: 11px 0; }
+.bar-row { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
 .bar-label { width: 110px; font-size: 13px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bar-track { flex: 1; height: 10px; background: #f2f3f5; border-radius: 5px; overflow: hidden; }
-.bar-fill { height: 100%; background: linear-gradient(90deg, #63e2b7, #18a058); border-radius: 5px; }
+.bar-fill { height: 100%; background: linear-gradient(90deg, #a5b4fc, #646cff); border-radius: 5px; }
 .bar-num { width: 30px; text-align: right; font-size: 13px; color: var(--text-2); }
 .donut-wrap { display: flex; align-items: center; gap: 28px; justify-content: center; padding: 10px 0; }
 .donut { width: 160px; height: 160px; border-radius: 50%; position: relative; flex-shrink: 0; }
@@ -567,27 +597,27 @@ a { color: var(--primary); text-decoration: none; }
 .legend-item { display: flex; align-items: center; gap: 8px; margin: 8px 0; font-size: 13px; color: var(--text-2); }
 .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
 .log-line {
-  display: flex; align-items: center; gap: 10px; padding: 9px 0;
+  display: flex; align-items: center; gap: 10px; padding: 10px 0;
   border-bottom: 1px solid #f2f3f5; font-size: 13px;
 }
 .log-line:last-child { border-bottom: none; }
 .log-time { color: var(--text-3); width: 130px; flex-shrink: 0; }
 .log-tag {
-  background: var(--primary-light); color: var(--primary); border-radius: 4px;
+  background: var(--primary-weak); color: var(--primary); border-radius: 4px;
   padding: 1px 8px; font-size: 12px; flex-shrink: 0;
 }
 
 /* ===== 表格 ===== */
-.toolbar { display: flex; gap: 10px; margin-bottom: 14px; align-items: center; flex-wrap: wrap; }
+.toolbar { display: flex; gap: 10px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
 .toolbar .spacer { flex: 1; }
-select.form-input { width: auto; padding: 8px 10px; }
+select.form-input { width: auto; padding: 8px 10px; height: 40px; }
 table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; }
 th {
-  text-align: left; font-weight: 600; font-size: 13px; color: var(--text-2);
-  background: #fafafa; padding: 11px 12px; border-bottom: 1px solid var(--border); white-space: nowrap;
+  text-align: left; font-weight: 500; font-size: 13px; color: var(--text-2);
+  background: #f7f8fa; padding: 12px; border-bottom: 1px solid var(--border); white-space: nowrap;
 }
-td { padding: 11px 12px; border-bottom: 1px solid #f2f3f5; font-size: 13px; }
-tr:hover td { background: #fafcfb; }
+td { padding: 12px; border-bottom: 1px solid #f2f3f5; font-size: 13px; color: var(--text-1); }
+tr:hover td { background: #fafbfc; }
 .cell-main { font-weight: 500; }
 .cell-sub { color: var(--text-3); font-size: 12px; margin-top: 2px; }
 .badge {
@@ -595,37 +625,37 @@ tr:hover td { background: #fafcfb; }
   border-radius: 10px; font-size: 12px; white-space: nowrap;
 }
 .badge .dot { width: 6px; height: 6px; border-radius: 50%; }
-.badge-running { background: #e8f7f0; color: #18a058; }
-.badge-running .dot { background: #18a058; }
+.badge-running { background: #e8fff4; color: #0e9f6e; }
+.badge-running .dot { background: #0e9f6e; }
 .badge-stopped { background: #f2f3f5; color: #86909c; }
 .badge-stopped .dot { background: #86909c; }
-.badge-maintenance { background: #fdf3e7; color: #d97706; }
+.badge-maintenance { background: #fff7e6; color: #d97706; }
 .badge-maintenance .dot { background: #d97706; }
 .badge-warn { background: #fff7e6; color: #d97706; }
 .badge-expired { background: #fff1f0; color: #d03050; }
-.pager { display: flex; gap: 10px; align-items: center; justify-content: flex-end; margin-top: 14px; }
+.pager { display: flex; gap: 10px; align-items: center; justify-content: flex-end; margin-top: 16px; }
 .pager-info { color: var(--text-3); font-size: 13px; }
 .empty { text-align: center; color: var(--text-3); padding: 40px 0; }
 
 /* ===== 弹窗 ===== */
 .modal-mask {
-  position: fixed; inset: 0; background: rgba(0,0,0,.35); display: none;
+  position: fixed; inset: 0; background: rgba(0, 0, 0, .35); display: none;
   align-items: center; justify-content: center; z-index: 50;
 }
 .modal {
-  background: #fff; border-radius: 10px; width: 620px; max-width: 94vw;
-  padding: 22px 24px; max-height: 86vh; overflow: auto;
+  background: #fff; border-radius: 12px; width: 620px; max-width: 94vw;
+  padding: 24px; max-height: 86vh; overflow: auto;
 }
 .modal-title { font-size: 16px; font-weight: 600; margin: 0 0 18px; }
 .modal-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 
 /* ===== 设置页 ===== */
 .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
-.hint { font-size: 12px; color: var(--text-3); margin-top: 6px; line-height: 1.6; }
+.hint { font-size: 12px; color: var(--text-3); margin-top: 14px; line-height: 1.6; text-align: center; }
 
 /* ===== Toast ===== */
 .toast {
-  position: fixed; top: 20px; right: 20px; background: #262626; color: #fff;
+  position: fixed; top: 20px; right: 20px; background: #1d2129; color: #fff;
   padding: 11px 18px; border-radius: 8px; font-size: 13px; opacity: 0;
   transform: translateY(-8px); transition: all .25s; z-index: 99; pointer-events: none;
 }
@@ -636,7 +666,7 @@ tr:hover td { background: #fafcfb; }
   .cards { grid-template-columns: repeat(2, 1fr); }
   .row2 { grid-template-columns: 1fr; }
   .settings-grid { grid-template-columns: 1fr; }
-  .login-brand { display: none; }
+  .login-card { width: 92vw; }
 }
 </style>
 </head>
@@ -644,34 +674,34 @@ tr:hover td { background: #fafcfb; }
 
 <!-- ================= 登录 ================= -->
 <div class="login-wrap" id="view-login">
-  <div class="login-brand">
-    <h1>mevps</h1>
-    <p>VPS 服务器管理面板</p>
-    <p>Cloudflare Workers · D1 · 轻量部署</p>
-    <div class="feature">
-      <div><span class="tick">&#10003;</span> 数据仪表盘，资产状态一目了然</div>
-      <div><span class="tick">&#10003;</span> VPS 全生命周期信息管理</div>
-      <div><span class="tick">&#10003;</span> 完整操作日志审计</div>
-      <div><span class="tick">&#10003;</span> 系统变量统一存储于 D1</div>
+  <div class="blob-1"></div>
+  <div class="blob-2"></div>
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="brand-logo">M</div>
+      <div>
+        <div class="brand-name">mevps 管理系统</div>
+        <div class="brand-sub">VPS 服务器管理面板 · Cloudflare Workers + D1</div>
+      </div>
     </div>
-  </div>
-  <div class="login-box">
-    <div class="login-card">
-      <h2>欢迎回来</h2>
-      <p class="sub">登录 mevps 管理系统</p>
-      <form id="login-form">
-        <div class="form-item">
-          <label>用户名</label>
-          <input class="form-input" id="login-username" autocomplete="username" placeholder="请输入用户名">
-        </div>
-        <div class="form-item">
-          <label>密码</label>
-          <input class="form-input" id="login-password" type="password" autocomplete="current-password" placeholder="请输入密码">
-        </div>
-        <button class="btn btn-primary btn-block" type="submit">登 录</button>
-      </form>
-      <p class="hint">默认账号：admin / 123456，登录后请在「系统设置」中及时修改密码。</p>
+    <div class="login-tab">密码登录</div>
+    <form id="login-form">
+      <div class="form-item">
+        <input class="form-input" id="login-username" autocomplete="username" placeholder="请输入用户名">
+      </div>
+      <div class="form-item">
+        <input class="form-input" id="login-password" type="password" autocomplete="current-password" placeholder="请输入密码">
+      </div>
+      <div class="login-row">
+        <label class="remember"><input type="checkbox" id="login-remember" checked> 记住我</label>
+        <a class="forgot" href="javascript:void(0)">忘记密码？</a>
+      </div>
+      <button class="btn-pill" type="submit">确 认</button>
+    </form>
+    <div class="login-extra">
+      <button type="button" class="chip" onclick="fillAccount()">默认账号 admin / 123456</button>
     </div>
+    <p class="hint">首次登录后请在「系统设置」中及时修改密码</p>
   </div>
 </div>
 
@@ -719,11 +749,34 @@ tr:hover td { background: #fafcfb; }
     <div class="content">
       <!-- 仪表盘 -->
       <section id="page-dashboard">
+        <div class="card greet">
+          <div>
+            <div class="greet-title" id="greet-text">欢迎回来</div>
+            <div class="greet-sub">祝你今天工作顺利，机器稳定运行</div>
+          </div>
+          <div class="greet-meta">mevps · VPS 服务器管理面板</div>
+        </div>
         <div class="cards">
-          <div class="card"><div class="stat-title">VPS 总数</div><div class="stat-value" id="d-total">0</div><div class="stat-sub">全部纳管资产</div></div>
-          <div class="card"><div class="stat-title">运行中</div><div class="stat-value" id="d-running" style="color:#18a058">0</div><div class="stat-sub">状态正常的机器</div></div>
-          <div class="card"><div class="stat-title">即将到期</div><div class="stat-value" id="d-expiring" style="color:#d97706">0</div><div class="stat-sub">按设置的提醒天数统计</div></div>
-          <div class="card"><div class="stat-title">月度支出</div><div class="stat-value" id="d-monthly">¥0</div><div class="stat-sub">所有 VPS 月付合计</div></div>
+          <div class="stat-card g1">
+            <div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/></svg>VPS 总数</div>
+            <div class="n" id="d-total">0</div>
+            <div class="s">全部纳管资产</div>
+          </div>
+          <div class="stat-card g2">
+            <div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>运行中</div>
+            <div class="n" id="d-running">0</div>
+            <div class="s">状态正常的机器</div>
+          </div>
+          <div class="stat-card g4">
+            <div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>即将到期</div>
+            <div class="n" id="d-expiring">0</div>
+            <div class="s">按设置的提醒天数统计</div>
+          </div>
+          <div class="stat-card g3">
+            <div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M7 7h7a3 3 0 010 6H8a3 3 0 000 6h8"/></svg>月度支出</div>
+            <div class="n" id="d-monthly">¥0</div>
+            <div class="s">所有 VPS 月付合计</div>
+          </div>
         </div>
 
         <div class="row2">
@@ -926,6 +979,9 @@ function showApp() {
   var name = state.user || 'admin';
   $('user-name').textContent = name;
   $('user-avatar').textContent = name.charAt(0).toUpperCase();
+  var h = new Date().getHours();
+  var greet = h < 6 ? '凌晨好' : (h < 9 ? '早安' : (h < 12 ? '上午好' : (h < 14 ? '中午好' : (h < 18 ? '下午好' : '晚上好'))));
+  $('greet-text').textContent = greet + '，' + name + '，今天又是充满活力的一天';
   switchPage('dashboard');
 }
 
@@ -974,7 +1030,7 @@ function renderDashboard() {
     }
     $('d-providers').innerHTML = ph;
 
-    var colors = ['#18a058', '#63e2b7', '#f2c94c'];
+    var colors = ['#646cff', '#2dd4bf', '#f59e0b'];
     var total = 0;
     for (var k = 0; k < d.status_dist.length; k++) total += d.status_dist[k].value;
     $('d-donut-n').textContent = total;
@@ -1240,6 +1296,11 @@ function logout() {
   }).catch(function () {
     showLogin();
   });
+}
+
+function fillAccount() {
+  $('login-username').value = 'admin';
+  $('login-password').value = '123456';
 }
 
 $('login-form').addEventListener('submit', function (e) {
