@@ -60,11 +60,18 @@ function api(path, method, body) {
 /* ---------- 视图切换 ---------- */
 
 function showLogin() {
+  $('view-loading').style.display = 'none';
   $('view-login').style.display = 'flex';
   $('view-app').style.display = 'none';
 }
 
+function hashPage() {
+  var p = (location.hash || '').replace('#', '');
+  return PAGE_TITLES[p] ? p : 'dashboard';
+}
+
 function showApp() {
+  $('view-loading').style.display = 'none';
   $('view-login').style.display = 'none';
   $('view-app').style.display = 'flex';
   var name = state.user || 'admin';
@@ -73,7 +80,7 @@ function showApp() {
   var h = new Date().getHours();
   var greet = h < 6 ? '凌晨好' : (h < 9 ? '早安' : (h < 12 ? '上午好' : (h < 14 ? '中午好' : (h < 18 ? '下午好' : '晚上好'))));
   $('greet-text').textContent = greet + '，' + name + '，今天又是充满活力的一天';
-  switchPage('dashboard');
+  switchPage(hashPage());
 }
 
 var PAGE_TITLES = { dashboard: '数据仪表盘', vps: 'VPS 管理', logs: '操作日志', settings: '系统设置' };
@@ -93,6 +100,7 @@ function closeSidebar() {
 
 function switchPage(page) {
   state.page = page;
+  try { history.replaceState(null, '', '#' + page); } catch (e) {}
   if (window.innerWidth <= 960) closeSidebar();
   var items = document.querySelectorAll('.menu-item');
   for (var i = 0; i < items.length; i++) {
@@ -460,7 +468,17 @@ function submitReset() {
 }
 
 function toggleSwitch(key) {
-  $('sw-' + key).classList.toggle('on');
+  var el = $('sw-' + key);
+  el.classList.toggle('on');
+  api('/api/settings', 'POST', {
+    captcha_enabled: $('sw-captcha_enabled').classList.contains('on') ? '1' : '0',
+    forgot_enabled: $('sw-forgot_enabled').classList.contains('on') ? '1' : '0'
+  }).then(function () {
+    toast('开关已保存');
+  }).catch(function (e) {
+    el.classList.toggle('on');
+    toast(e.message, true);
+  });
 }
 
 $('login-form').addEventListener('submit', function (e) {

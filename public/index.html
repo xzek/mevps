@@ -9,7 +9,13 @@
 <body>
 
 <!-- ================= 登录 ================= -->
-<div class="login-wrap" id="view-login">
+<div class="login-wrap" id="view-loading">
+  <div class="login-card" style="width:auto;text-align:center">
+    <div class="brand-name" style="margin-bottom:8px">mevps</div>
+    <div class="hint-l">加载中…</div>
+  </div>
+</div>
+<div class="login-wrap" id="view-login" style="display:none">
   <div class="blob-1"></div>
   <div class="blob-2"></div>
   <div class="login-card">
@@ -212,14 +218,14 @@
                 <div class="switch-label">启用登录验证码</div>
                 <div class="hint-l">登录时需要输入图片验证码</div>
               </div>
-              <div class="switch on" id="sw-captcha_enabled" onclick="toggleSwitch('captcha_enabled')"><div class="knob"></div></div>
+              <div class="switch" id="sw-captcha_enabled" onclick="toggleSwitch('captcha_enabled')"><div class="knob"></div></div>
             </div>
             <div class="switch-row">
               <div>
                 <div class="switch-label">启用邮箱找回密码</div>
                 <div class="hint-l">忘记密码时通过管理员邮箱发送重置链接</div>
               </div>
-              <div class="switch on" id="sw-forgot_enabled" onclick="toggleSwitch('forgot_enabled')"><div class="knob"></div></div>
+              <div class="switch" id="sw-forgot_enabled" onclick="toggleSwitch('forgot_enabled')"><div class="knob"></div></div>
             </div>
           </div>
           <div class="card">
@@ -302,6 +308,6 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="/assets/admin.4d26a44e.js"></script>
+<script src="/assets/admin.6654a13a.js"></script>
 </body>
 </html>
