@@ -221,7 +221,7 @@ tr:hover td { background: #fafbfc; }
 /* ===== 验证码 ===== */
 .captcha-row { display: flex; gap: 10px; align-items: center; }
 .captcha-box {
-  width: 120px; height: 44px; border: 1px solid var(--border); border-radius: 8px;
+  width: 120px; height: 32px; border: 1px solid var(--border); border-radius: 6px;
   overflow: hidden; cursor: pointer; flex-shrink: 0; background: #eef0ff;
 }
 .captcha-box svg { display: block; }
@@ -259,7 +259,7 @@ tr:hover td { background: #fafbfc; }
 
 /* ===== 移动端：汉堡按钮 + 抽屉侧边栏 ===== */
 .burger {
-  display: none; width: 38px; height: 38px; border: 1px solid var(--border); border-radius: 8px;
+  display: none; width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 6px;
   background: #fff; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
   color: var(--text-1); padding: 0;
 }

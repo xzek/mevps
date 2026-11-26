@@ -63,7 +63,7 @@ function randCode(n) {
 }
 
 function genCaptchaSvg(code) {
-  const w = 120, h = 44;
+  const w = 120, h = 32;
   let deco = '';
   for (let i = 0; i < 5; i++) {
     const x1 = Math.random() * w, y1 = Math.random() * h;
@@ -77,12 +77,12 @@ function genCaptchaSvg(code) {
   const step = w / (code.length + 1);
   for (let i = 0; i < code.length; i++) {
     const x = step * (i + 0.8);
-    const y = 28 + Math.random() * 8;
+    const y = 19 + Math.random() * 5;
     const rot = -18 + Math.random() * 36;
-    const size = 22 + Math.random() * 6;
+    const size = 17 + Math.random() * 4;
     text += '<text x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" font-size="' + size.toFixed(1) + '" font-family="Arial, sans-serif" font-weight="bold" fill="#4b53c9" transform="rotate(' + rot.toFixed(1) + ' ' + x.toFixed(1) + ' ' + y.toFixed(1) + ')">' + code[i] + '</text>';
   }
-  return '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '"><rect width="' + w + '" height="' + h + '" rx="8" fill="#eef0ff"/>' + deco + text + '</svg>';
+  return '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '"><rect width="' + w + '" height="' + h + '" rx="6" fill="#eef0ff"/>' + deco + text + '</svg>';
 }
 
 /* ---------------- 设置与邮件 ---------------- */
