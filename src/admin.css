@@ -45,8 +45,9 @@ a { color: var(--primary); text-decoration: none; }
 .login-extra { display: flex; gap: 10px; margin-top: 16px; justify-content: center; }
 
 /* ===== 表单 ===== */
+/* 统一控件规格：height 32px、圆角 6px */
 .form-input {
-  width: 100%; height: 42px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px;
+  width: 100%; height: 32px; padding: 0 12px; border: 1px solid var(--border); border-radius: 6px;
   font-size: 14px; outline: none; background: #fff; transition: all .15s;
 }
 .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(100, 108, 255, .12); }
@@ -66,13 +67,13 @@ a { color: var(--primary); text-decoration: none; }
 
 /* ===== 按钮 ===== */
 .btn {
-  padding: 8px 18px; border-radius: 6px; border: 1px solid transparent; cursor: pointer;
+  height: 32px; padding: 0 18px; border-radius: 6px; border: 1px solid transparent; cursor: pointer;
   font-size: 14px; transition: all .15s;
 }
 .btn-primary { background: var(--primary); color: #fff; }
 .btn-primary:hover { background: var(--primary-hover); }
 .btn-pill {
-  width: 100%; height: 44px; border-radius: 40px;
+  width: 100%; height: 32px; border-radius: 6px;
   background: linear-gradient(135deg, #646cff 0%, #818cf8 100%); color: #fff;
   font-size: 15px; font-weight: 500; border: none; cursor: pointer; transition: all .15s;
 }
@@ -88,7 +89,7 @@ a { color: var(--primary); text-decoration: none; }
 .btn-danger { background: #fff; border-color: #ffccc7; color: #d03050; }
 .btn-danger:hover { background: #fff1f0; }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
-.btn-sm { padding: 4px 12px; font-size: 12px; }
+.btn-sm { height: auto; padding: 4px 12px; font-size: 12px; }
 
 /* ===== 布局 ===== */
 .app { display: flex; height: 100vh; overflow: hidden; }
@@ -177,7 +178,7 @@ a { color: var(--primary); text-decoration: none; }
 /* ===== 表格 ===== */
 .toolbar { display: flex; gap: 10px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
 .toolbar .spacer { flex: 1; }
-select.form-input { width: auto; padding: 8px 10px; height: 40px; }
+select.form-input { width: auto; padding: 0 10px; height: 32px; }
 table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; }
 th {
   text-align: left; font-weight: 500; font-size: 13px; color: var(--text-2);
