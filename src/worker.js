@@ -3,11 +3,11 @@
  * Cloudflare Workers + D1 全栈单文件（API + 前端）
  *
  * 部署方式（Cloudflare 控制台浏览器操作）：
- *   1. 创建 D1 数据库，名字固定：mymail
+ *   1. 创建 D1 数据库，名字固定：mevps
  *   2. 创建 Worker，把本文件全部内容粘贴进编辑器并部署
  *   3. 在 Worker 的 Settings -> Bindings 添加 D1 绑定：
  *      Variable name（变量名）固定为  db
- *      D1 database 选择 mymail
+ *      D1 database 选择 mevps
  *   4. 首次访问自动建表并初始化（默认账号 admin / 123456）
  */
 
@@ -90,7 +90,7 @@ async function ensureInit(env) {
   // 默认系统变量（全部存 D1）
   const defaults = {
     site_name: 'mevps',
-    admin_email: 'mymail',
+    admin_email: 'mevps',
     expire_warn_days: '7',
   };
   for (const key of Object.keys(defaults)) {

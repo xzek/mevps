@@ -26,7 +26,7 @@
 ### 1. 创建 D1 数据库
 
 1. 打开 [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages** → **D1**（或「存储和数据库 → D1」）
-2. 点击 **Create database**，数据库名称固定填写：**`mymail`**
+2. 点击 **Create database**，数据库名称固定填写：**`mevps`**
 3. 创建完成即可，无需手动建表（首次访问自动建表并写入默认数据）
 
 ### 2. 创建 Worker 并粘贴代码
@@ -40,7 +40,7 @@
 1. 回到 Worker 的 **Settings** → **Bindings** → **Add binding**
 2. 选择 **D1 database**：
    - **Variable name（变量名）** 固定填：**`db`**
-   - **D1 database** 选择：**`mymail`**
+   - **D1 database** 选择：**`mevps`**
 3. 保存并再次 **Deploy**
 
 ### 4. 访问
@@ -61,14 +61,14 @@ mevps/
 
 - **所有系统变量都存在 D1 里**（`settings` 表，key-value 形式），修改后立即生效
 - 数据表首次访问自动创建：`users`（账号）、`sessions`（会话）、`vps`（机器资产）、`logs`（操作日志）、`settings`（系统变量）
-- 默认系统变量：`site_name=mevps`、`admin_email=mymail`、`expire_warn_days=7`
+- 默认系统变量：`site_name=mevps`、`admin_email=mevps`、`expire_warn_days=7`
 
 ## 可选：Wrangler CLI 部署
 
 ```bash
 npm i -g wrangler
 wrangler login
-wrangler d1 create mymail        # 如控制台已创建可跳过
+wrangler d1 create mevps         # 如控制台已创建可跳过
 # 把返回的 database_id 填入 wrangler.toml
 wrangler deploy
 ```
