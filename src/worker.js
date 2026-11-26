@@ -52,6 +52,86 @@ function clientIp(request) {
   return request.headers.get('cf-connecting-ip') || '-';
 }
 
+/* ---------------- 图片验证码 ---------------- */
+
+function randCode(n) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const buf = crypto.getRandomValues(new Uint8Array(n));
+  let out = '';
+  for (let i = 0; i < n; i++) out += chars[buf[i] % chars.length];
+  return out;
+}
+
+function genCaptchaSvg(code) {
+  const w = 120, h = 44;
+  let deco = '';
+  for (let i = 0; i < 5; i++) {
+    const x1 = Math.random() * w, y1 = Math.random() * h;
+    const x2 = Math.random() * w, y2 = Math.random() * h;
+    deco += '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" stroke="#c7c9f5" stroke-width="1.2"/>';
+  }
+  for (let i = 0; i < 22; i++) {
+    deco += '<circle cx="' + (Math.random() * w).toFixed(1) + '" cy="' + (Math.random() * h).toFixed(1) + '" r="' + (1 + Math.random() * 1.5).toFixed(1) + '" fill="#b9bcf0"/>';
+  }
+  let text = '';
+  const step = w / (code.length + 1);
+  for (let i = 0; i < code.length; i++) {
+    const x = step * (i + 0.8);
+    const y = 28 + Math.random() * 8;
+    const rot = -18 + Math.random() * 36;
+    const size = 22 + Math.random() * 6;
+    text += '<text x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" font-size="' + size.toFixed(1) + '" font-family="Arial, sans-serif" font-weight="bold" fill="#4b53c9" transform="rotate(' + rot.toFixed(1) + ' ' + x.toFixed(1) + ' ' + y.toFixed(1) + ')">' + code[i] + '</text>';
+  }
+  return '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '"><rect width="' + w + '" height="' + h + '" rx="8" fill="#eef0ff"/>' + deco + text + '</svg>';
+}
+
+/* ---------------- 设置与邮件 ---------------- */
+
+async function getSettingsMap(env) {
+  const rows = (await env.db.prepare('SELECT key, value FROM settings').all()).results || [];
+  const map = {};
+  for (const r of rows) map[r.key] = r.value;
+  return map;
+}
+
+async function sendOutlookMail(env, s, toEmail, subject, htmlBody) {
+  const tenant = String(s.outlook_tenant_id || '').trim();
+  const clientId = String(s.outlook_client_id || '').trim();
+  const secret = String(s.outlook_client_secret || '').trim();
+  const sender = String(s.outlook_sender || '').trim();
+  if (!tenant || !clientId || !secret || !sender) {
+    throw new Error('Outlook (Graph API) 未配置完整');
+  }
+  const tokenRes = await fetch('https://login.microsoftonline.com/' + tenant + '/oauth2/v2.0/token', {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: secret,
+      scope: 'https://graph.microsoft.com/.default',
+      grant_type: 'client_credentials',
+    }),
+  });
+  if (!tokenRes.ok) throw new Error('获取 Graph API 令牌失败 (' + tokenRes.status + ')');
+  const tokenData = await tokenRes.json();
+  const sendRes = await fetch('https://graph.microsoft.com/v1.0/users/' + encodeURIComponent(sender) + '/sendMail', {
+    method: 'POST',
+    headers: {
+      authorization: 'Bearer ' + tokenData.access_token,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      message: {
+        subject,
+        body: { contentType: 'HTML', content: htmlBody },
+        toRecipients: [{ emailAddress: { address: toEmail } }],
+      },
+      saveToSentItems: true,
+    }),
+  });
+  if (!sendRes.ok) throw new Error('发送邮件失败 (' + sendRes.status + ')');
+}
+
 /* ---------------- 数据库初始化（自动建表 + 默认数据） ---------------- */
 
 async function ensureInit(env) {
@@ -74,6 +154,8 @@ async function ensureInit(env) {
     env.db.prepare('CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id)'),
     env.db.prepare('CREATE INDEX IF NOT EXISTS idx_logs_created ON logs(created_at)'),
     env.db.prepare('CREATE INDEX IF NOT EXISTS idx_vps_status ON vps(status)'),
+    env.db.prepare('CREATE TABLE IF NOT EXISTS captcha (id TEXT PRIMARY KEY, code TEXT NOT NULL, created_at INTEGER)'),
+    env.db.prepare('CREATE TABLE IF NOT EXISTS pw_resets (token TEXT PRIMARY KEY, user_id INTEGER NOT NULL, created_at INTEGER, expires_at INTEGER, used INTEGER DEFAULT 0)'),
   ]);
 
   // 默认管理员：admin / 123456
@@ -92,6 +174,12 @@ async function ensureInit(env) {
     site_name: 'mevps',
     admin_email: 'mevps',
     expire_warn_days: '7',
+    captcha_enabled: '1',
+    forgot_enabled: '1',
+    outlook_tenant_id: '',
+    outlook_client_id: '',
+    outlook_client_secret: '',
+    outlook_sender: '',
   };
   for (const key of Object.keys(defaults)) {
     await env.db
@@ -138,6 +226,17 @@ async function handleApi(request, env, url) {
     const body = await request.json().catch(() => ({}));
     const username = String(body.username || '').trim();
     const password = String(body.password || '');
+    const smap = await getSettingsMap(env);
+    if (smap.captcha_enabled === '1') {
+      const cid = String(body.captcha_id || '');
+      const ccode = String(body.captcha_code || '').trim().toUpperCase();
+      const cap = await env.db.prepare('SELECT code FROM captcha WHERE id = ?').bind(cid).first();
+      if (cid) await env.db.prepare('DELETE FROM captcha WHERE id = ?').bind(cid).run();
+      if (!cap || !ccode || cap.code !== ccode) {
+        await addLog(env, request, null, '登录失败', username, '验证码错误');
+        return json({ error: '验证码错误' }, 400);
+      }
+    }
     const user = await env.db.prepare('SELECT * FROM users WHERE username = ?').bind(username).first();
     if (!user) {
       await addLog(env, request, null, '登录失败', username, '用户不存在');
@@ -161,6 +260,65 @@ async function handleApi(request, env, url) {
         'set-cookie': SESSION_COOKIE + '=' + token + '; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=' + SESSION_DAYS * 86400,
       },
     });
+  }
+
+  // ---- 图片验证码（公开） ----
+  if (path === '/api/captcha' && method === 'GET') {
+    const smap = await getSettingsMap(env);
+    const code = randCode(4);
+    const id = crypto.randomUUID();
+    await env.db.prepare('INSERT INTO captcha (id, code, created_at) VALUES (?,?,?)').bind(id, code, now()).run();
+    await env.db.prepare('DELETE FROM captcha WHERE created_at < ?').bind(now() - 600000).run();
+    return json({ id, svg: genCaptchaSvg(code), enabled: smap.captcha_enabled === '1' });
+  }
+
+  // ---- 忘记密码：邮箱找回（公开） ----
+  if (path === '/api/forgot-password' && method === 'POST') {
+    const body = await request.json().catch(() => ({}));
+    const email = String(body.email || '').trim().toLowerCase();
+    const smap = await getSettingsMap(env);
+    const adminEmail = String(smap.admin_email || '').trim().toLowerCase();
+    if (smap.forgot_enabled !== '1' || !email || !adminEmail || email !== adminEmail) {
+      await addLog(env, request, null, '找回密码', email || '-', '邮箱未登记或功能未启用');
+      return json({ ok: true, message: '如果该邮箱已登记，重置邮件已发送' });
+    }
+    try {
+      const urow = await env.db.prepare('SELECT id FROM users ORDER BY id LIMIT 1').first();
+      const token = crypto.randomUUID() + '-' + hex(crypto.getRandomValues(new Uint8Array(16)));
+      await env.db
+        .prepare('INSERT INTO pw_resets (token, user_id, created_at, expires_at, used) VALUES (?,?,?,?,0)')
+        .bind(token, urow.id, now(), now() + 1800000)
+        .run();
+      const origin = new URL(request.url).origin;
+      const link = origin + '/?reset=' + encodeURIComponent(token);
+      const mailBody =
+        '<div style="font-family:sans-serif;line-height:1.8"><h2>mevps 密码重置</h2>' +
+        '<p>你正在找回 mevps 管理面板密码，点击下面的链接重置（30 分钟内有效）：</p>' +
+        '<p><a href="' + link + '">' + link + '</a></p>' +
+        '<p>如果不是你本人操作，请忽略本邮件。</p></div>';
+      await sendOutlookMail(env, smap, email, 'mevps 密码重置', mailBody);
+      await addLog(env, request, null, '找回密码', email, '重置邮件已发送');
+    } catch (err) {
+      await addLog(env, request, null, '找回密码', email, '发送失败: ' + String((err && err.message) || err));
+      return json({ error: '邮件发送失败，请检查 Outlook (Graph API) 设置' }, 500);
+    }
+    return json({ ok: true, message: '如果该邮箱已登记，重置邮件已发送' });
+  }
+
+  // ---- 重置密码（公开，凭邮件链接令牌） ----
+  if (path === '/api/reset-password' && method === 'POST') {
+    const body = await request.json().catch(() => ({}));
+    const token = String(body.token || '');
+    const newPassword = String(body.new_password || '');
+    if (newPassword.length < 6) return json({ error: '新密码至少 6 位' }, 400);
+    const row = await env.db.prepare('SELECT * FROM pw_resets WHERE token = ?').bind(token).first();
+    if (!row || row.used || row.expires_at < now()) return json({ error: '重置链接无效或已过期' }, 400);
+    const salt = hex(crypto.getRandomValues(new Uint8Array(16)));
+    const hash = await hashPassword(newPassword, salt);
+    await env.db.prepare('UPDATE users SET password_hash = ?, salt = ? WHERE id = ?').bind(hash, salt, row.user_id).run();
+    await env.db.prepare('UPDATE pw_resets SET used = 1 WHERE token = ?').bind(token).run();
+    await addLog(env, request, null, '重置密码', '通过邮件链接', '');
+    return json({ ok: true });
   }
 
   // ---- 其余接口需要登录 ----
@@ -365,11 +523,14 @@ async function handleApi(request, env, url) {
 
   if (path === '/api/settings' && method === 'POST') {
     const b = await request.json().catch(() => ({}));
-    const allowed = ['site_name', 'admin_email', 'expire_warn_days'];
+    const allowed = ['site_name', 'admin_email', 'expire_warn_days', 'captcha_enabled', 'forgot_enabled', 'outlook_tenant_id', 'outlook_client_id', 'outlook_client_secret', 'outlook_sender'];
     const changed = [];
     for (const key of allowed) {
       if (b[key] !== undefined) {
         let value = String(b[key]).trim();
+        if (key === 'captcha_enabled' || key === 'forgot_enabled') {
+          if (value !== '0' && value !== '1') return json({ error: '开关值无效' }, 400);
+        }
         if (key === 'expire_warn_days') {
           const n = parseInt(value, 10);
           if (isNaN(n) || n < 1 || n > 90) return json({ error: '到期提醒天数需为 1-90 的整数' }, 400);
@@ -648,6 +809,33 @@ tr:hover td { background: #fafbfc; }
 }
 .modal-title { font-size: 16px; font-weight: 600; margin: 0 0 18px; }
 .modal-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.modal-sm { width: 400px; }
+
+/* ===== 验证码 ===== */
+.captcha-row { display: flex; gap: 10px; align-items: center; }
+.captcha-box {
+  width: 120px; height: 44px; border: 1px solid var(--border); border-radius: 8px;
+  overflow: hidden; cursor: pointer; flex-shrink: 0; background: #eef0ff;
+}
+.captcha-box svg { display: block; }
+
+/* ===== 开关（naive 风格） ===== */
+.switch-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 0; border-bottom: 1px solid #f2f3f5; gap: 16px;
+}
+.switch-row:last-child { border-bottom: none; }
+.switch-label { font-size: 14px; font-weight: 500; }
+.switch {
+  width: 44px; height: 22px; border-radius: 11px; background: #c0c4cc;
+  position: relative; cursor: pointer; transition: background .2s; flex-shrink: 0;
+}
+.switch .knob {
+  position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%;
+  background: #fff; transition: left .2s; box-shadow: 0 1px 3px rgba(0, 0, 0, .15);
+}
+.switch.on { background: var(--primary); }
+.switch.on .knob { left: 24px; }
 
 /* ===== 设置页 ===== */
 .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
@@ -680,11 +868,10 @@ tr:hover td { background: #fafbfc; }
     <div class="login-brand">
       <div class="brand-logo">M</div>
       <div>
-        <div class="brand-name">mevps 管理系统</div>
+        <div class="brand-name">VPS 服务器管理系统</div>
         <div class="brand-sub">VPS 服务器管理面板 · Cloudflare Workers + D1</div>
       </div>
     </div>
-    <div class="login-tab">密码登录</div>
     <form id="login-form">
       <div class="form-item">
         <input class="form-input" id="login-username" autocomplete="username" placeholder="请输入用户名">
@@ -692,16 +879,17 @@ tr:hover td { background: #fafbfc; }
       <div class="form-item">
         <input class="form-input" id="login-password" type="password" autocomplete="current-password" placeholder="请输入密码">
       </div>
+      <div class="form-item captcha-row" id="captcha-row">
+        <input class="form-input" id="login-captcha" placeholder="验证码" maxlength="4" autocomplete="off">
+        <div class="captcha-box" id="captcha-box" onclick="loadCaptcha()" title="点击刷新"></div>
+      </div>
       <div class="login-row">
         <label class="remember"><input type="checkbox" id="login-remember" checked> 记住我</label>
-        <a class="forgot" href="javascript:void(0)">忘记密码？</a>
+        <a class="forgot" href="javascript:void(0)" onclick="showForgot()">忘记密码？</a>
       </div>
       <button class="btn-pill" type="submit">确 认</button>
     </form>
-    <div class="login-extra">
-      <button type="button" class="chip" onclick="fillAccount()">默认账号 admin / 123456</button>
-    </div>
-    <p class="hint">首次登录后请在「系统设置」中及时修改密码</p>
+    <p class="hint">mevps · Powered by CF Workers + D1</p>
   </div>
 </div>
 
@@ -856,10 +1044,36 @@ tr:hover td { background: #fafbfc; }
         <div class="settings-grid">
           <div class="card">
             <div class="section-title">系统变量</div>
-            <p class="hint" style="margin-top:-6px">所有变量统一存储于 D1 数据库，保存后立即生效。</p>
+            <p class="hint-l" style="margin:-8px 0 14px">所有变量统一存储于 D1 数据库，保存后立即生效。</p>
             <div class="form-item"><label>站点名称</label><input class="form-input" id="s-site_name"></div>
             <div class="form-item"><label>管理员邮箱</label><input class="form-input" id="s-admin_email"></div>
             <div class="form-item"><label>到期提醒天数</label><input class="form-input" id="s-expire_warn_days" type="number" min="1" max="90"></div>
+            <button class="btn btn-primary" onclick="saveSettings()">保存设置</button>
+          </div>
+          <div class="card">
+            <div class="section-title">安全与登录</div>
+            <div class="switch-row">
+              <div>
+                <div class="switch-label">启用登录验证码</div>
+                <div class="hint-l">登录时需要输入图片验证码</div>
+              </div>
+              <div class="switch on" id="sw-captcha_enabled" onclick="toggleSwitch('captcha_enabled')"><div class="knob"></div></div>
+            </div>
+            <div class="switch-row">
+              <div>
+                <div class="switch-label">启用邮箱找回密码</div>
+                <div class="hint-l">忘记密码时通过管理员邮箱发送重置链接</div>
+              </div>
+              <div class="switch on" id="sw-forgot_enabled" onclick="toggleSwitch('forgot_enabled')"><div class="knob"></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="section-title">Outlook (Graph API) 设置</div>
+            <p class="hint-l" style="margin:-8px 0 14px">用于「忘记密码」时通过 Outlook 发送重置邮件，需在 Azure 注册应用并授权 Mail.Send。</p>
+            <div class="form-item"><label>租户 ID (Tenant ID)</label><input class="form-input" id="s-outlook_tenant_id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"></div>
+            <div class="form-item"><label>客户端 ID (Client ID)</label><input class="form-input" id="s-outlook_client_id" placeholder="Application (client) ID"></div>
+            <div class="form-item"><label>客户端机密 (Client Secret)</label><input class="form-input" id="s-outlook_client_secret" type="password" placeholder="Client Secret Value"></div>
+            <div class="form-item"><label>发件邮箱 (Send As)</label><input class="form-input" id="s-outlook_sender" placeholder="sender@yourdomain.com"></div>
             <button class="btn btn-primary" onclick="saveSettings()">保存设置</button>
           </div>
           <div class="card">
@@ -906,6 +1120,31 @@ tr:hover td { background: #fafbfc; }
   </div>
 </div>
 
+<!-- 忘记密码弹窗 -->
+<div class="modal-mask" id="forgot-mask">
+  <div class="modal modal-sm">
+    <div class="modal-title">找回密码</div>
+    <p class="hint-l" style="margin:-8px 0 16px">输入管理员邮箱，我们会发送一封密码重置邮件（30 分钟内有效）。</p>
+    <div class="form-item"><input class="form-input" id="forgot-email" type="email" placeholder="请输入邮箱"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="hideForgot()">取消</button>
+      <button class="btn btn-primary" onclick="submitForgot()">发送邮件</button>
+    </div>
+  </div>
+</div>
+
+<!-- 重置密码弹窗 -->
+<div class="modal-mask" id="reset-mask">
+  <div class="modal modal-sm">
+    <div class="modal-title">重置密码</div>
+    <div class="form-item"><label>新密码</label><input class="form-input" id="reset-new" type="password" placeholder="至少 6 位"></div>
+    <div class="form-item"><label>确认新密码</label><input class="form-input" id="reset-new2" type="password"></div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" onclick="submitReset()">重置密码</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -917,7 +1156,9 @@ var state = {
   vpsPage: 1,
   vpsList: [],
   logPage: 1,
-  editingId: 0
+  editingId: 0,
+  captchaId: '',
+  resetToken: ''
 };
 
 function $(id) { return document.getElementById(id); }
@@ -1249,6 +1490,12 @@ function renderSettings() {
     $('s-site_name').value = s.site_name || '';
     $('s-admin_email').value = s.admin_email || '';
     $('s-expire_warn_days').value = s.expire_warn_days || '7';
+    $('s-outlook_tenant_id').value = s.outlook_tenant_id || '';
+    $('s-outlook_client_id').value = s.outlook_client_id || '';
+    $('s-outlook_client_secret').value = s.outlook_client_secret || '';
+    $('s-outlook_sender').value = s.outlook_sender || '';
+    $('sw-captcha_enabled').classList.toggle('on', s.captcha_enabled === '1');
+    $('sw-forgot_enabled').classList.toggle('on', s.forgot_enabled === '1');
     if (s.site_name) {
       $('brand-name').textContent = s.site_name;
       document.title = s.site_name + ' · VPS 管理系统';
@@ -1262,7 +1509,13 @@ function saveSettings() {
   api('/api/settings', 'POST', {
     site_name: $('s-site_name').value,
     admin_email: $('s-admin_email').value,
-    expire_warn_days: $('s-expire_warn_days').value
+    expire_warn_days: $('s-expire_warn_days').value,
+    captcha_enabled: $('sw-captcha_enabled').classList.contains('on') ? '1' : '0',
+    forgot_enabled: $('sw-forgot_enabled').classList.contains('on') ? '1' : '0',
+    outlook_tenant_id: $('s-outlook_tenant_id').value.trim(),
+    outlook_client_id: $('s-outlook_client_id').value.trim(),
+    outlook_client_secret: $('s-outlook_client_secret').value.trim(),
+    outlook_sender: $('s-outlook_sender').value.trim()
   }).then(function () {
     toast('设置已保存');
     renderSettings();
@@ -1298,25 +1551,79 @@ function logout() {
   });
 }
 
-function fillAccount() {
-  $('login-username').value = 'admin';
-  $('login-password').value = '123456';
+function loadCaptcha() {
+  api('/api/captcha').then(function (d) {
+    state.captchaId = d.id;
+    $('captcha-box').innerHTML = d.svg;
+    $('login-captcha').value = '';
+    $('captcha-row').style.display = d.enabled ? 'flex' : 'none';
+  }).catch(function () {});
+}
+
+function showForgot() {
+  $('forgot-email').value = '';
+  $('forgot-mask').style.display = 'flex';
+}
+
+function hideForgot() {
+  $('forgot-mask').style.display = 'none';
+}
+
+function submitForgot() {
+  var email = $('forgot-email').value.trim();
+  if (!email) { toast('请输入邮箱', true); return; }
+  api('/api/forgot-password', 'POST', { email: email }).then(function (d) {
+    hideForgot();
+    toast(d.message || '如果该邮箱已登记，重置邮件已发送');
+  }).catch(function (e) {
+    toast(e.message, true);
+  });
+}
+
+function submitReset() {
+  var p1 = $('reset-new').value;
+  var p2 = $('reset-new2').value;
+  if (p1.length < 6) { toast('新密码至少 6 位', true); return; }
+  if (p1 !== p2) { toast('两次输入的新密码不一致', true); return; }
+  api('/api/reset-password', 'POST', { token: state.resetToken, new_password: p1 }).then(function () {
+    $('reset-mask').style.display = 'none';
+    toast('密码已重置，请使用新密码登录');
+    state.resetToken = '';
+    window.history.replaceState({}, '', location.pathname);
+  }).catch(function (e) {
+    toast(e.message, true);
+  });
+}
+
+function toggleSwitch(key) {
+  $('sw-' + key).classList.toggle('on');
 }
 
 $('login-form').addEventListener('submit', function (e) {
   e.preventDefault();
   api('/api/login', 'POST', {
     username: $('login-username').value.trim(),
-    password: $('login-password').value
+    password: $('login-password').value,
+    captcha_id: state.captchaId,
+    captcha_code: $('login-captcha').value.trim()
   }).then(function (d) {
     state.user = d.username;
     showApp();
   }).catch(function (err) {
     toast(err.message, true);
+    loadCaptcha();
   });
 });
 
 /* ---------- 启动 ---------- */
+
+loadCaptcha();
+
+var resetToken = new URLSearchParams(location.search).get('reset');
+if (resetToken) {
+  state.resetToken = resetToken;
+  $('reset-mask').style.display = 'flex';
+}
 
 api('/api/me').then(function (d) {
   state.user = d.username;
